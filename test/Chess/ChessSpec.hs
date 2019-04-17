@@ -101,6 +101,7 @@ spec = do
                           blackPawnUnderAttack b    = setCell b (Cell Black Pawn) (coordinateToPosition C Three)
       let moves = pawnMoves board (coordinateToPosition B Two)
       moves `shouldBe` [(coordinateToPosition C Three)]
+      isAttackMove board (coordinateToPosition B Two) (coordinateToPosition C Three) `shouldBe` True
 
     it "should attack to up and left" $ do
       let (Just board) = whitePawn >>= blockingWhitePawn >>= blackPawnUnderAttack where
@@ -109,3 +110,59 @@ spec = do
                           blackPawnUnderAttack b    = setCell b (Cell Black Pawn) (coordinateToPosition A Three)
       let moves = pawnMoves board (coordinateToPosition B Two)
       moves `shouldBe` [(coordinateToPosition A Three)]
+      isAttackMove board (coordinateToPosition B Two) (coordinateToPosition A Three) `shouldBe` True
+
+  describe "pawnMoves for blacks" $ do
+    it "should return one move from row Eight" $ do
+      let (Just board) = setCell emptyBoard (Cell Black Pawn) (coordinateToPosition A Eight)
+          moves = pawnMoves board (coordinateToPosition A Eight)
+      moves `shouldBe` [(coordinateToPosition A Seven)]
+
+    it "should return two moves from row Seven" $ do
+      let (Just board) = setCell emptyBoard (Cell Black Pawn) (coordinateToPosition A Seven)
+          moves = pawnMoves board (coordinateToPosition A Seven)
+      moves `shouldBe` [(coordinateToPosition A Six), (coordinateToPosition A Five)]
+
+    it "should return zero moves from row One" $ do
+      let (Just board) = setCell emptyBoard (Cell Black Pawn) (coordinateToPosition A One)
+          moves = pawnMoves board (coordinateToPosition A One)
+      moves `shouldBe` []
+
+    it "should return zero moves if cell is blocked" $ do
+      let (Just board) = do
+                           board' <- setCell emptyBoard (Cell Black Pawn) (coordinateToPosition A Eight)
+                           setCell board' (Cell Black Pawn) (coordinateToPosition A Seven)
+          moves = pawnMoves board (coordinateToPosition A Eight)
+      moves `shouldBe` []
+
+    it "should return zero moves if cell is blocked and it's on row Two" $ do
+      let (Just board) = do
+                           board' <- setCell emptyBoard (Cell Black Pawn) (coordinateToPosition A Seven)
+                           setCell board' (Cell Black Pawn) (coordinateToPosition A Six)
+          moves = pawnMoves board (coordinateToPosition A Seven)
+      moves `shouldBe` []
+
+    it "should return only one move if +2 cell is blocked and it's on row Seven" $ do
+      let (Just board) = do
+                           board' <- setCell emptyBoard (Cell Black Pawn) (coordinateToPosition A Seven)
+                           setCell board' (Cell Black Pawn) (coordinateToPosition A Five)
+          moves = pawnMoves board (coordinateToPosition A Seven)
+      moves `shouldBe` [(coordinateToPosition A Six)]
+
+    it "should attack to up and right" $ do
+      let (Just board) = blackPawn >>= blockingBlackPawn >>= whitePawnUnderAttack where
+                          blackPawn                 = setCell emptyBoard (Cell Black Pawn) (coordinateToPosition B Seven)
+                          blockingBlackPawn b       = setCell b (Cell Black Pawn) (coordinateToPosition B Six)
+                          whitePawnUnderAttack b    = setCell b (Cell White Pawn) (coordinateToPosition C Six)
+      let moves = pawnMoves board (coordinateToPosition B Seven)
+      moves `shouldBe` [(coordinateToPosition C Six)]
+      isAttackMove board (coordinateToPosition B Seven) (coordinateToPosition C Six) `shouldBe` True
+
+    it "should attack to up and left" $ do
+      let (Just board) = blackPawn >>= blockingBlackPawn >>= whitePawnUnderAttack where
+                          blackPawn                 = setCell emptyBoard (Cell Black Pawn) (coordinateToPosition B Seven)
+                          blockingBlackPawn b       = setCell b (Cell Black Pawn) (coordinateToPosition B Six)
+                          whitePawnUnderAttack b    = setCell b (Cell White Pawn) (coordinateToPosition A Six)
+      let moves = pawnMoves board (coordinateToPosition B Seven)
+      moves `shouldBe` [(coordinateToPosition A Six)]
+      isAttackMove board (coordinateToPosition B Seven) (coordinateToPosition A Six) `shouldBe` True
