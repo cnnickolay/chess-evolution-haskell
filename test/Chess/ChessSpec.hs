@@ -239,3 +239,249 @@ spec = do
         expectedMoves = Set.fromList $ [(coordinateToPosition E Four)]
       moves `shouldBe` expectedMoves
       isAttackMove boardWithEnemy location (coordinateToPosition E Four) `shouldBe` True
+
+  describe "bishopMoves" $ do
+    let
+      location = coordinateToPosition D Four
+      (Just board) = setCell emptyBoard (Cell White Pawn) (coordinateToPosition D Four)
+    it "should move to all directions" $ do
+      let
+        moves = Set.fromList $ bishopMoves board location
+        expectedMoves = Set.fromList [
+                          (coordinateToPosition A One)
+                        , (coordinateToPosition B Two)
+                        , (coordinateToPosition C Three)
+                        , (coordinateToPosition E Five)
+                        , (coordinateToPosition F Six)
+                        , (coordinateToPosition G Seven)
+                        , (coordinateToPosition H Eight)
+                        , (coordinateToPosition G One)
+                        , (coordinateToPosition F Two)
+                        , (coordinateToPosition E Three)
+                        , (coordinateToPosition C Five)
+                        , (coordinateToPosition B Six)
+                        , (coordinateToPosition A Seven)
+                        ]
+      moves `shouldBe` expectedMoves
+
+    it "should attack up and right" $ do
+      let
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell where
+                                  upperRightCell = setCell board (Cell Black Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+        moves = Set.fromList $ bishopMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [(coordinateToPosition E Five)]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location (coordinateToPosition E Five) `shouldBe` True
+
+    it "should attack down and right" $ do
+      let
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell Black Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+        moves = Set.fromList $ bishopMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [(coordinateToPosition E Three)]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location (coordinateToPosition E Three) `shouldBe` True
+
+    it "should attack up and left" $ do
+      let
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell Black Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+        moves = Set.fromList $ bishopMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [(coordinateToPosition C Five)]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location (coordinateToPosition C Five) `shouldBe` True
+
+    it "should attack down and left" $ do
+      let
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell Black Pawn) (coordinateToPosition C Three)
+        moves = Set.fromList $ bishopMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [(coordinateToPosition C Three)]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location (coordinateToPosition C Three) `shouldBe` True
+
+  describe "queenMoves" $ do
+    let
+      location = coordinateToPosition D Four
+      (Just board) = setCell emptyBoard (Cell White Pawn) (coordinateToPosition D Four)
+    it "should move to all directions" $ do
+      let
+        moves = Set.fromList $ queenMoves board location
+        expectedMoves = Set.fromList [
+                          (coordinateToPosition A One)
+                        , (coordinateToPosition B Two)
+                        , (coordinateToPosition C Three)
+                        , (coordinateToPosition E Five)
+                        , (coordinateToPosition F Six)
+                        , (coordinateToPosition G Seven)
+                        , (coordinateToPosition H Eight)
+                        , (coordinateToPosition G One)
+                        , (coordinateToPosition F Two)
+                        , (coordinateToPosition E Three)
+                        , (coordinateToPosition C Five)
+                        , (coordinateToPosition B Six)
+                        , (coordinateToPosition A Seven)
+                        , (coordinateToPosition A Four)
+                        , (coordinateToPosition B Four)
+                        , (coordinateToPosition C Four)
+                        , (coordinateToPosition E Four)
+                        , (coordinateToPosition F Four)
+                        , (coordinateToPosition G Four)
+                        , (coordinateToPosition H Four)
+                        , (coordinateToPosition D One)
+                        , (coordinateToPosition D Two)
+                        , (coordinateToPosition D Three)
+                        , (coordinateToPosition D Five)
+                        , (coordinateToPosition D Six)
+                        , (coordinateToPosition D Seven)
+                        , (coordinateToPosition D Eight)
+                        ]
+      moves `shouldBe` expectedMoves
+
+    it "should attack up and right" $ do
+      let
+        attackCell = coordinateToPosition E Five
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell Black Pawn) (attackCell)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+                                  upperCell b = setCell b (Cell White Pawn) (coordinateToPosition D Five)
+                                  lowerCell b = setCell b (Cell White Pawn) (coordinateToPosition D Three)
+                                  leftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Four)
+                                  rightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Four)
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+    it "should attack down and right" $ do
+      let
+        attackCell = coordinateToPosition E Three
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell Black Pawn) attackCell
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+                                  upperCell b = setCell b (Cell White Pawn) (coordinateToPosition D Five)
+                                  lowerCell b = setCell b (Cell White Pawn) (coordinateToPosition D Three)
+                                  leftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Four)
+                                  rightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Four)
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+    it "should attack up and left" $ do
+      let
+        attackCell = coordinateToPosition C Five
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell Black Pawn) attackCell
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+                                  upperCell b = setCell b (Cell White Pawn) (coordinateToPosition D Five)
+                                  lowerCell b = setCell b (Cell White Pawn) (coordinateToPosition D Three)
+                                  leftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Four)
+                                  rightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Four)
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+    it "should attack down and left" $ do
+      let
+        attackCell = coordinateToPosition C Three
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell Black Pawn) attackCell
+                                  upperCell b = setCell b (Cell White Pawn) (coordinateToPosition D Five)
+                                  lowerCell b = setCell b (Cell White Pawn) (coordinateToPosition D Three)
+                                  leftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Four)
+                                  rightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Four)
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+    it "should attack up" $ do
+      let
+        attackCell = coordinateToPosition D Five
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+                                  upperCell b = setCell b (Cell Black Pawn) attackCell
+                                  lowerCell b = setCell b (Cell White Pawn) (coordinateToPosition D Three)
+                                  leftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Four)
+                                  rightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Four)
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+    it "should attack down" $ do
+      let
+        attackCell = coordinateToPosition D Three
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+                                  upperCell b = setCell b (Cell White Pawn) (coordinateToPosition D Five)
+                                  lowerCell b = setCell b (Cell Black Pawn) attackCell
+                                  leftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Four)
+                                  rightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Four)
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+    it "should attack left" $ do
+      let
+        attackCell = coordinateToPosition C Four
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+                                  upperCell b = setCell b (Cell White Pawn) (coordinateToPosition D Five)
+                                  lowerCell b = setCell b (Cell White Pawn) (coordinateToPosition D Three)
+                                  leftCell b = setCell b (Cell Black Pawn) attackCell
+                                  rightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Four)
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+    it "should attack right" $ do
+      let
+        attackCell = coordinateToPosition E Four
+        (Just boardWithEnemy) = upperRightCell >>= lowerRightCell >>= upperLeftCell >>= lowerLeftCell >>= upperCell >>= lowerCell >>= leftCell >>= rightCell where
+                                  upperRightCell = setCell board (Cell White Pawn) (coordinateToPosition E Five)
+                                  lowerRightCell b = setCell b (Cell White Pawn) (coordinateToPosition E Three)
+                                  upperLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Five)
+                                  lowerLeftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Three)
+                                  upperCell b = setCell b (Cell White Pawn) (coordinateToPosition D Five)
+                                  lowerCell b = setCell b (Cell White Pawn) (coordinateToPosition D Three)
+                                  leftCell b = setCell b (Cell White Pawn) (coordinateToPosition C Four)
+                                  rightCell b = setCell b (Cell Black Pawn) attackCell
+        moves = Set.fromList $ queenMoves boardWithEnemy location
+        expectedMoves = Set.fromList $ [attackCell]
+      moves `shouldBe` expectedMoves
+      isAttackMove boardWithEnemy location attackCell `shouldBe` True
