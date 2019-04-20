@@ -562,6 +562,50 @@ spec = do
                         ]
       checkMoves setup (locationH, locationV) f expectedMoves
 
+  describe "kingMoves" $ do
+    let f = kingMoves
+    it "should move straight to all directions" $ do
+      let
+        locationH = D
+        locationV = Four
+        setup = [ (locationH, locationV, White, Knight) ]
+        expectedMoves = [(D, Five, False),
+                         (D, Three, False),
+                         (C, Four, False),
+                         (E, Four, False)
+                        ]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+    it "should attack straight to all directions" $ do
+      let
+        locationH = D
+        locationV = Four
+        setup = [ (locationH, locationV, White, Knight)
+                , (D, Five, Black, Pawn)
+                , (D, Three, Black, Pawn)
+                , (C, Four, Black, Pawn)
+                , (E, Four, Black, Pawn)
+                ]
+        expectedMoves = [(D, Five, True),
+                         (D, Three, True),
+                         (C, Four, True),
+                         (E, Four, True)
+                        ]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+    it "should not be able to move when it's blocked" $ do
+      let
+        locationH = D
+        locationV = Four
+        setup = [ (locationH, locationV, White, Knight)
+                , (D, Five, White, Pawn)
+                , (D, Three, White, Pawn)
+                , (C, Four, White, Pawn)
+                , (E, Four, White, Pawn)
+                ]
+        expectedMoves = []
+      checkMoves setup (locationH, locationV) f expectedMoves
+
 checkMoves :: [(HorizontalAxis, VerticalAxis, Color, Figure)] -> (HorizontalAxis, VerticalAxis) -> (Board -> Position -> [Position]) -> [(HorizontalAxis, VerticalAxis, Bool)] -> IO ()
 checkMoves setup initLocation@(iH, iV) f expectation =
   let
