@@ -9,8 +9,8 @@ data Figure = King | Queen | Bishop | Knight | Rook | Pawn deriving (Show, Eq)
 data Color = Black | White deriving (Show, Eq)
 data Cell = Empty | Cell Color Figure deriving (Show, Eq)
 type Board = Array Int Cell
-data HorizontalAxis = A | B | C | D | E | F | G | H deriving (Show, Eq)
-data VerticalAxis = One | Two | Three | Four | Five | Six | Seven | Eight deriving (Show, Eq)
+data HorizontalAxis = A | B | C | D | E | F | G | H deriving (Show, Eq, Ord)
+data VerticalAxis = One | Two | Three | Four | Five | Six | Seven | Eight deriving (Show, Eq, Ord)
 type Position = Int
 
 newBoard :: Board

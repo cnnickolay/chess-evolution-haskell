@@ -4,6 +4,8 @@ import Chess.Chess
 import Test.Hspec
 import Test.QuickCheck
 import qualified Data.Set as Set
+import Data.Maybe
+import Control.Monad
 
 main :: IO ()
 main = hspec $ spec
@@ -485,3 +487,92 @@ spec = do
         expectedMoves = Set.fromList $ [attackCell]
       moves `shouldBe` expectedMoves
       isAttackMove boardWithEnemy location attackCell `shouldBe` True
+
+  describe "knightMoves" $ do
+    let f = knightMoves
+    it "should move from the low left corner" $ do
+      let
+        locationH = A
+        locationV = One
+        setup = [(locationH, locationV, White, Knight)]
+        expectedMoves = [(B, Three, False),
+                         (C, Two, False)]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+    it "should move from the top left corner" $ do
+      let
+        locationH = A
+        locationV = Eight
+        setup = [(locationH, locationV, White, Knight)]
+        expectedMoves = [(B, Six, False),
+                         (C, Seven, False)]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+    it "should move from the top right corner" $ do
+      let
+        locationH = H
+        locationV = Eight
+        setup = [(locationH, locationV, White, Knight)]
+        expectedMoves = [(G, Six, False),
+                         (F, Seven, False)]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+    it "should move from the low right corner" $ do
+      let
+        locationH = H
+        locationV = One
+        setup = [(locationH, locationV, White, Knight)]
+        expectedMoves = [(G, Three, False),
+                         (F, Two, False)]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+    it "should move from the center" $ do
+      let
+        locationH = D
+        locationV = Four
+        setup = [(locationH, locationV, White, Knight)]
+        expectedMoves = [(E, Six, False),
+                         (F, Five, False),
+                         (F, Three, False),
+                         (E, Two, False),
+                         (C, Two, False),
+                         (B, Three, False),
+                         (B, Five, False),
+                         (C, Six, False)
+                        ]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+    it "should attack" $ do
+      let
+        locationH = D
+        locationV = Four
+        setup = [ (locationH, locationV, White, Knight)
+                , (E, Six, Black, Pawn)
+                , (F, Five, Black, Pawn)
+                , (E, Two, Black, Pawn)
+                ]
+        expectedMoves = [(E, Six, True),
+                         (F, Five, True),
+                         (F, Three, False),
+                         (E, Two, True),
+                         (C, Two, False),
+                         (B, Three, False),
+                         (B, Five, False),
+                         (C, Six, False)
+                        ]
+      checkMoves setup (locationH, locationV) f expectedMoves
+
+checkMoves :: [(HorizontalAxis, VerticalAxis, Color, Figure)] -> (HorizontalAxis, VerticalAxis) -> (Board -> Position -> [Position]) -> [(HorizontalAxis, VerticalAxis, Bool)] -> IO ()
+checkMoves setup initLocation@(iH, iV) f expectation =
+  let
+    normalize :: [Position] -> [(HorizontalAxis, VerticalAxis, Bool)]
+    normalize (p:ps) = normalizeOne p ++ normalize ps where
+                        normalizeOne p = maybeToList $ fmap coordinatesToMove $ positionToCoordinate p
+                        coordinatesToMove = (\(h, v) -> (h, v, (isAttackMove board (coordinateToPosition iH iV) (coordinateToPosition h v))) )
+    normalize _ = []
+
+    from = coordinateToPosition iH iV
+    (Just board) = foldM (\b (h, v, c, f) -> setCell b (Cell c f) (coordinateToPosition h v)) emptyBoard setup
+    result = Set.fromList (normalize $ f board from)
+  in
+    result `shouldBe` (Set.fromList expectation)
