@@ -10,6 +10,27 @@ import Control.Monad
 main :: IO ()
 main = hspec $ spec
 
+initBoard :: [(HorizontalAxis, VerticalAxis, Color, Figure)] -> Board
+initBoard setup =
+  let
+    (Just board) = foldM (\b (h, v, c, f) -> setCell b (Cell c f) (coordinateToPosition h v)) emptyBoard setup
+  in board
+
+checkMoves :: [(HorizontalAxis, VerticalAxis, Color, Figure)] -> (HorizontalAxis, VerticalAxis) -> (Board -> Position -> [Position]) -> [(HorizontalAxis, VerticalAxis, Bool)] -> IO ()
+checkMoves setup initLocation@(iH, iV) f expectation =
+  let
+    normalize :: [Position] -> [(HorizontalAxis, VerticalAxis, Bool)]
+    normalize (p:ps) = normalizeOne p ++ normalize ps where
+                        normalizeOne p = maybeToList $ fmap coordinatesToMove $ positionToCoordinate p
+                        coordinatesToMove = (\(h, v) -> (h, v, (isAttackMove board (coordinateToPosition iH iV) (coordinateToPosition h v))) )
+    normalize _ = []
+
+    from = coordinateToPosition iH iV
+    board = initBoard setup
+    result = Set.fromList (normalize $ f board from)
+  in
+    result `shouldBe` (Set.fromList expectation)
+
 spec :: Spec
 spec = do
   describe "positionToCoordinate" $ do
@@ -606,17 +627,21 @@ spec = do
         expectedMoves = []
       checkMoves setup (locationH, locationV) f expectedMoves
 
-checkMoves :: [(HorizontalAxis, VerticalAxis, Color, Figure)] -> (HorizontalAxis, VerticalAxis) -> (Board -> Position -> [Position]) -> [(HorizontalAxis, VerticalAxis, Bool)] -> IO ()
-checkMoves setup initLocation@(iH, iV) f expectation =
-  let
-    normalize :: [Position] -> [(HorizontalAxis, VerticalAxis, Bool)]
-    normalize (p:ps) = normalizeOne p ++ normalize ps where
-                        normalizeOne p = maybeToList $ fmap coordinatesToMove $ positionToCoordinate p
-                        coordinatesToMove = (\(h, v) -> (h, v, (isAttackMove board (coordinateToPosition iH iV) (coordinateToPosition h v))) )
-    normalize _ = []
+--  describe "king under attack" $ do
+--    it "figure can't move if king gets attacked" $ do
+--      let
+--        (locationH, locationV) = (A, Two)
+--        f = knightMoves
+--        setup = [ (A, One, White, King)
+--                , (A, Two, White, Knight)
+--                , (A, Three, Black, Rook)
+--                ]
+--        expectedMoves = []
+--      checkMoves setup (locationH, locationV) f expectedMoves
 
-    from = coordinateToPosition iH iV
-    (Just board) = foldM (\b (h, v, c, f) -> setCell b (Cell c f) (coordinateToPosition h v)) emptyBoard setup
-    result = Set.fromList (normalize $ f board from)
-  in
-    result `shouldBe` (Set.fromList expectation)
+  describe "fitness function" $ do
+    it "should assess one pawn" $ do
+      let
+        board = initBoard [ (A, One, White, Pawn) ]
+        performance = assessPerformance board White
+      performance `shouldBe` 2.0
