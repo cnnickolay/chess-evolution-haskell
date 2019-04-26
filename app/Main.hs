@@ -6,22 +6,26 @@ import Control.Monad.Trans.State
 import Chess.Chess
 import Chess.ChessMaster
 import Data.List
+import qualified Chess.TicTacToe as TicTacToe
 
 main :: IO ()
-main = do
-          putStrLn "started..."
-          let
-            wNNOrig = network [64, 64, 64, 64, 64, 1]
-            bNNOrig = network [64, 64, 64, 64, 64, 1]
+main = TicTacToe.play
 
-          (wNNOnSteroids, bNNOnSteroids) <- foldM (\b i -> (trainCycle b) <* (putStrLn $ "Cycle " ++ show i ++ " done")) (wNNOrig, bNNOrig) $ [1..1000]
---          (wNNOnSteroids, bNNOnSteroids) <- trainCycle (wNNOrig, bNNOrig)
-
-          let Game _ moves _ = execState (play wNNOnSteroids bNNOnSteroids 100) newGame
-          putStrLn $ show wNNOnSteroids
-          putStrLn $ show bNNOnSteroids
-          putStrLn $ convertToPGN moves
-          pure ()
+--main :: IO ()
+--main = do
+--          putStrLn "started..."
+--          let
+--            wNNOrig = network [64, 64, 64, 64, 64, 1]
+--            bNNOrig = network [64, 64, 64, 64, 64, 1]
+--
+--          (wNNOnSteroids, bNNOnSteroids) <- foldM (\b i -> (trainCycle b) <* (putStrLn $ "Cycle " ++ show i ++ " done")) (wNNOrig, bNNOrig) $ [1..1000]
+----          (wNNOnSteroids, bNNOnSteroids) <- trainCycle (wNNOrig, bNNOrig)
+--
+--          let Game _ moves _ = execState (play wNNOnSteroids bNNOnSteroids 100) newGame
+--          putStrLn $ show wNNOnSteroids
+--          putStrLn $ show bNNOnSteroids
+--          putStrLn $ convertToPGN moves
+--          pure ()
 
 trainCycle :: (NN, NN) -> IO (NN, NN)
 trainCycle (wNNOrig, bNNOrig) =

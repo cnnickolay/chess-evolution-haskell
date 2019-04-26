@@ -50,3 +50,15 @@ spec = do
               )
 
       (evalState f newBoard) `shouldBe` Just Zero
+
+  describe "allMoves" $ do
+    it "return all cells on empty board" $ do
+      (evalState (allMoves Cross) newBoard) `shouldBe` [(1,1),(1,2),(1,3),(2,1),(2,2),(2,3),(3,1),(3,2),(3,3)]
+
+    it "returns only empty cells" $ do
+      let f = (do
+                  setCell (Cell Zero) (3, 1) >> setCell (Cell Zero) (2, 2) >> setCell (Cell Zero) (1, 3)
+                  allMoves Zero
+              )
+
+      (evalState f newBoard) `shouldBe`  [(1,1),(1,2),(2,1),(2,3),(3,2),(3,3)]
