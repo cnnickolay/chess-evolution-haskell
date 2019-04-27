@@ -6,6 +6,7 @@ import Data.Array
 import Data.List.Split
 import Data.List
 import Chess.NeuralNetwork
+import Data.Char
 
 type Coordinate = (Int, Int)
 data Player = Cross | Zero deriving (Show, Eq)
@@ -28,12 +29,18 @@ newBoard = array ((1, 1), (3, 3)) [ ((1, 1), Empty)
 newGame :: State Board ()
 newGame = put newBoard
 
+setCellOnBoard :: Board -> CellType -> (Int, Int) -> Board
+setCellOnBoard board cell coord = execState (setCell cell coord) board
+
 setCell :: CellType -> (Int, Int) -> State Board ()
 setCell cell coord = do
                     s <- get
                     let a = s // [(coord, cell)]
                     put a
                     pure ()
+
+findWinnerOnBoard :: Board -> (Maybe Player)
+findWinnerOnBoard board = evalState (findWinner) board
 
 findWinner :: State Board (Maybe Player)
 findWinner = do
@@ -49,6 +56,9 @@ findWinner = do
                    winner :: Maybe Player
                    winner = fmap (\(Cell a) -> a) $ find (\a -> a /= Empty) $ map getWinner lines
                pure winner
+
+allMovesOnBoard :: Board -> [Coordinate]
+allMovesOnBoard board = evalState (allMoves) board
 
 allMoves :: State Board [Coordinate]
 allMoves =
@@ -90,7 +100,7 @@ nextMove nn player =
       generateBoard c = execState (setCell (Cell player) c) board
       boards = generateBoard <$> moves
       estimated = zip (estimateBoard nn player <$> boards) moves
-      sorted = sortBy ordering estimated
+      sorted = reverse $ sortBy ordering estimated
       ordering (a, _) (b, _)
         | a > b     = GT
         | a < b     = LT
@@ -100,9 +110,9 @@ nextMove nn player =
     pure $ fmap (\(_, coord) -> coord) $ head sorted
 
 playGame :: NN -> NN -> ((Maybe Player), Board)
-playGame nn1 nn2 =
+playGame zeroNN crossNN =
   let
-    winner = play' nn1 Zero where
+    winner = play' zeroNN Zero where
                play' :: NN -> Player -> State Board (Maybe Player)
                play' nn player = do
                                    coordinateM <- nextMove nn player
@@ -113,21 +123,96 @@ playGame nn1 nn2 =
                                                           winner <- findWinner
                                                           case winner of
                                                             Just p  -> pure winner
-                                                            Nothing -> if player == Zero then play' nn2 Cross
-                                                                       else play' nn1 Zero
+                                                            Nothing -> if player == Zero then play' crossNN Cross
+                                                                       else play' zeroNN Zero
     result = runState winner newBoard
   in result
+
+evolveUntilWin :: NN -> NN -> Player -> Int -> IO (Maybe NN)
+evolveUntilWin zeroNN crossNN player max = evolveUntilWin' 0 where
+  evolveUntilWin' :: Int -> IO (Maybe NN)
+  evolveUntilWin' current = do
+                              nns <- breedNN 0.01 1000 (if player == Cross then crossNN else zeroNN)
+                              let
+                                playGame' nn
+                                  | player == Zero = playGame nn crossNN
+                                  | otherwise      = playGame zeroNN nn
+                                filterPlayer (nn, ((Just p), _))
+                                  | p == player = True
+                                filterPlayer _  = False
+                                extract (nn, ((Just p), _)) = nn
+                                winners = map extract $
+                                          filter filterPlayer $
+                                          zip nns (playGame' <$> nns)
+                                result = case winners of
+                                  [] | current < max -> evolveUntilWin' (current+1)
+                                     | otherwise     -> pure Nothing
+                                  _                  -> pure $ Just $ squashNNs winners
+                              result
+
+evolve :: Int -> NN -> NN -> IO (Maybe (NN, NN))
+evolve steps originalZeroNN originalCrossNN =
+  evolve' originalZeroNN originalCrossNN 0 Zero where
+    evolve' :: NN -> NN -> Int -> Player -> IO (Maybe (NN, NN))
+    evolve' zeroNN crossNN currentStep player = do
+                                                  putStrLn $ "Step " ++ (show currentStep)
+                                                  evolvedNN_M <- evolveUntilWin zeroNN crossNN player 10
+                                                  case evolvedNN_M of
+                                                    (Just evolvedNN) | currentStep < steps && player == Zero  -> evolve' evolvedNN crossNN (currentStep+1) Cross
+                                                    (Just evolvedNN) | currentStep < steps && player == Cross -> evolve' zeroNN evolvedNN (currentStep+1) Zero
+                                                    (Just evolvedNN) | player == Zero -> pure $ Just (evolvedNN, crossNN)
+                                                    (Just evolvedNN) | player == Cross -> pure $ Just (zeroNN, evolvedNN)
+                                                    _ -> pure Nothing
+
+invertPlayer Zero = Cross
+invertPlayer Cross = Zero
+
+playAgainstNN :: NN -> Player -> IO ()
+playAgainstNN nn humanPlayer =
+  playAgainstNN' newBoard humanPlayer where
+              oneMoreGame :: IO ()
+              oneMoreGame = do
+                              putStr "One more game? "
+                              yn <- getChar
+                              if yn == 'y' then playAgainstNN' newBoard humanPlayer
+                              else pure ()
+
+              playAgainstNN' :: Board -> Player -> IO ()
+              playAgainstNN' board currentPlayer =
+                do
+                  putStrLn ""
+                  printBoard board
+                  (Just board') <-
+                            if humanPlayer == currentPlayer then
+                              do
+                                let board' (a:b:_) = Just $ setCellOnBoard board (Cell humanPlayer) (digitToInt a, digitToInt b)
+                                putStr "Make your move human (IntInt, e.g. 31): "
+                                fmap board' getLine
+                            else
+                              pure $ evalState (do
+                                                  computerCoords <- nextMove nn $ invertPlayer humanPlayer
+                                                  case computerCoords of
+                                                    Just (coords) -> pure $ Just $ setCellOnBoard board (Cell $ invertPlayer humanPlayer) coords
+                                                    Nothing       -> pure Nothing
+                                               ) board
+                  let
+                    winner' = findWinnerOnBoard board'
+                  case winner' of
+                    (Just winner) | winner == humanPlayer -> putStrLn "Human won" >> oneMoreGame
+                                  | otherwise             -> putStrLn "Computer won" >> oneMoreGame
+                    Nothing | allMovesOnBoard board' == [] -> putStrLn "Draw" >> oneMoreGame
+                            | otherwise                    -> playAgainstNN' board' $ invertPlayer currentPlayer
 
 play :: IO ()
 play = do
          let
-           wNNOrig = network [9, 4, 1]
-           bNNOrig = network [9, 4, 1]
-         wNN <- mutateNetwork 0.1 wNNOrig
-         bNN <- mutateNetwork 0.1 bNNOrig
-         let (winner, board) = playGame wNN bNN
+           zeroOrig = network [9, 9, 9, 9, 1]
+           crossOrig = network [9, 9, 9, 9, 1]
+         (Just (zeroNN, crossNN)) <- evolve 100 zeroOrig crossOrig
+         let (winner, board) = playGame zeroNN crossNN
          printBoard board
          putStrLn $ show $ winner
+         playAgainstNN zeroNN Cross
          pure ()
 
 cellToText (Cell Zero) = "0"
